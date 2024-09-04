@@ -1,0 +1,64 @@
+from pydantic import BaseModel, EmailStr, field_validator
+from exceptions.exceptions import InvalidUserException
+from typing import Optional
+import re
+
+class Members(BaseModel):
+    name: str
+    email: EmailStr
+    mobile_number: int  # Mobile number as integer
+    location: str
+
+    @field_validator('name')
+    def name_length_and_capitalization(cls, v):
+        if len(v) > 15:
+            raise InvalidUserException(detail='Name must be 15 characters or less')
+        if not v[0].isupper():
+            raise InvalidUserException(detail='Name must start with a capital letter')
+        return v
+    
+    @field_validator('email')
+    def validate_email(cls, v):
+        # Regular expression to validate email format
+        email_pattern = r'^[\w._%+-]+@[a-zA-Z]+\.[a-zA-Z]+$'
+        if not re.match(email_pattern, v):
+            raise InvalidUserException(detail='Invalid email format')
+        return v
+
+    @field_validator('mobile_number')
+    def validate_mobile_number(cls, v):
+        mobile_str = str(v)
+        if len(mobile_str) != 10 or not mobile_str.isdigit():
+            raise InvalidUserException(detail='Mobile number must be exactly 10 digits')
+        return v
+
+
+class UpdateMember(BaseModel):
+    name: str = None
+    email: EmailStr = None
+    mobile_number: int = None
+    location: str = None
+
+    @field_validator('name')
+    def name_length_and_capitalization(cls, v):
+        if len(v) > 15:
+            raise InvalidUserException(detail='Name must be 15 characters or less')
+        if not v[0].isupper():
+            raise InvalidUserException(detail='Name must start with a capital letter')
+        return v
+    
+    @field_validator('email')
+    def validate_email(cls, v):
+        # Regular expression to validate email format
+        email_pattern = r'^[\w._%+-]+@[a-zA-Z]+\.[a-zA-Z]+$'
+        if not re.match(email_pattern, v):
+            raise InvalidUserException(detail='Invalid email format')
+        return v
+
+    @field_validator('mobile_number')
+    def validate_mobile_number(cls, v):
+        mobile_str = str(v)
+        if len(mobile_str) != 10 or not mobile_str.isdigit():
+            raise InvalidUserException(detail='Mobile number must be exactly 10 digits')
+        return v
+    
