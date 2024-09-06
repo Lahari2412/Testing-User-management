@@ -89,8 +89,8 @@ async def update_user(id: int, update_user: UpdateUser):
         )
 
     user_data = update_user.model_dump(exclude_unset=True)
-    if 'password' in user_data:
-        user_data['password'] = hashpw(user_data['password'].encode('utf-8'), gensalt()).decode('utf-8')
+    # if 'password' in user_data:
+    #     user_data['password'] = hashpw(user_data['password'].encode('utf-8'), gensalt()).decode('utf-8')
 
     # Create User model to validate the updated data
     updated_user = UpdateUser(**{**existing_user, **user_data})

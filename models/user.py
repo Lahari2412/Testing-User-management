@@ -56,7 +56,7 @@ class UpdateUser(BaseModel):
     email: EmailStr = None
     mobile_number: int = None
     location: str = None
-    password: str = None
+    # password: str = None
     whatsapp_api_token: Optional[str] = None
     whatsapp_cloud_number_id: Optional[str] = None
 
@@ -83,18 +83,18 @@ class UpdateUser(BaseModel):
             raise InvalidUserException(detail='Mobile number must be exactly 10 digits')
         return v
 
-    @field_validator('password')
-    def validate_password(cls, v, values):
-        if len(v) < 8:
-            raise InvalidUserException(detail='Password must be at least 8 characters long')
-        if not any(char.isupper() for char in v):
-            raise InvalidUserException(detail='Password must contain at least one uppercase letter')
-        if not any(char.isdigit() for char in v):
-            raise InvalidUserException(detail='Password must contain at least one digit')
-        if not any(char.islower() for char in v):
-            raise InvalidUserException(detail='Password must contain at least one lowercase letter')
-        if not any(char in "!@#$%^&*()_+-=" for char in v):
-            raise InvalidUserException(detail='Password must contain at least one special character')
-        return v
+    # @field_validator('password')
+    # def validate_password(cls, v, values):
+    #     if len(v) < 8:
+    #         raise InvalidUserException(detail='Password must be at least 8 characters long')
+    #     if not any(char.isupper() for char in v):
+    #         raise InvalidUserException(detail='Password must contain at least one uppercase letter')
+    #     if not any(char.isdigit() for char in v):
+    #         raise InvalidUserException(detail='Password must contain at least one digit')
+    #     if not any(char.islower() for char in v):
+    #         raise InvalidUserException(detail='Password must contain at least one lowercase letter')
+    #     if not any(char in "!@#$%^&*()_+-=" for char in v):
+    #         raise InvalidUserException(detail='Password must contain at least one special character')
+    #     return v
 
   
