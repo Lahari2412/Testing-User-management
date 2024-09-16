@@ -160,7 +160,9 @@ To effectively test a FastAPI application, you need a few key tools, libraries, 
   ```
 
   This application has two endpoints:
+  
   - `GET /`: Returns a simple message.
+
   - `GET /items/{item_id}`: Returns an item based on the `item_id` passed in the URL.
 
 ---
@@ -219,6 +221,22 @@ To effectively test a FastAPI application, you need a few key tools, libraries, 
 
 
 ### **Testing user routes**:`test_routes_user.py`
+
+
+- **Fixture**: `setup_db`
+
+  - **Description**: Sets up and tears down the test database. It drops the `user` collection before the tests run and drops it again after the tests complete to ensure a clean state.
+
+```python
+@pytest.fixture(scope="module")
+def setup_db():
+    # Ensure the user collection is empty before tests
+    conn.local.user.drop()
+    conn.local.counters.drop()  # Ensure counters collection is also empty for sequence values
+    yield
+    conn.local.user.drop()
+    conn.local.counters.drop()
+```
 
 #### Test Case 1: Create a New User
 
@@ -398,8 +416,7 @@ def test_get_user(setup_db):
 
   ```json
   {
-    "name": "Bob Updated",
-    "password": "NewPassword123!"
+    "name": "Bob Updated"
   }
   ```
 
@@ -570,8 +587,6 @@ def test_create_user_with_existing_email(setup_db):
     assert response.json()["detail"] == "User with this email already exists"
 ``` 
 
-Here are the explanations for the test cases that lacked detailed descriptions:
-
 ---
 
 #### Test Case 7: Create User with Invalid Data
@@ -680,7 +695,6 @@ def test_update_user_no_changes(setup_db):
         f"/api/v1/user/{user_id}",
         json={
             "name": "Bob Brown",  # No actual changes
-            "password": "Password123!"
         }
     )
     assert update_response.status_code == 400, f"Unexpected response: {update_response.json()}"
@@ -767,12 +781,6 @@ def test_delete_user_not_found(setup_db):
     assert response.json() == {"detail": "User with id 9999 not found"}
 ```
 
-These added descriptions should provide a comprehensive understanding of each test case.
-
-
-- **Fixture**: `setup_db`
-
-  - **Description**: Sets up and tears down the test database. It drops the `user` collection before the tests run and drops it again after the tests complete to ensure a clean state.
 
 ------------------------------------
 
@@ -799,13 +807,12 @@ These added descriptions should provide a comprehensive understanding of each te
 
   - The response status code should be `200 OK`.
 
-  - The response body should include a success message and contain the `user_id` and `user_role`.
-
+  - The response body should include a success message .
 - **Actual Result**:
 
   - The response status code is `200 OK`.
 
-  - The response body contains the message `"Login Successful"` and includes `user_id` and `user_role`.
+  - The response body contains the message `"Login Successful"` .
 
 - **Pass/Fail Criteria**: Pass.
 
@@ -825,8 +832,6 @@ def test_login_successful(setup_db):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Login Successful"
-    assert "user_id" in data
-    assert "user_role" in data
 ```
 
 ---
@@ -931,9 +936,6 @@ def test_login_non_existent_user(setup_db):
 
   - **Description**: Sets up and tears down the test database. It drops the `user` collection before the tests run and drops it again after the tests complete to ensure a clean state.
 
-- **Function**: `create_user`
-
-  - **Description**: Helper function to create a user in the database with a given email and password. It hashes the password using bcrypt and inserts the user document with a hardcoded `id` of `1`.
 
 ### **Testing Password Reset Routes**: `test_routes_password_reset.py`
 
@@ -959,15 +961,12 @@ def test_login_non_existent_user(setup_db):
 
   - The response body should contain a success message: `"Password reset successful"`.
 
-  - The user's password in the database should be different from the old hashed password.
-
 - **Actual Result**:
 
   - The response status code is `200 OK`.
 
   - The response body contains the message `"Password reset successful"`.
 
-  - The user's password in the database has been updated from the old hashed password.
 
 - **Pass/Fail Criteria**: Pass.
 
@@ -1140,11 +1139,6 @@ def test_create_admin_user(setup_db):
     response_data = response.json()
     assert response_data["email"] == "john.doe@example.com"
 
-    db = conn.local
-    user = db.user.find_one({"email": "john.doe@example.com"})
-    assert user is not None
-    assert user["name"] == "John Doe"
-    assert len(user["password"]) > 0  # Ensure password is hashed
 ```
 
 ---
@@ -1251,8 +1245,6 @@ def test_create_admin_user_invalid_email(setup_db):
     assert "detail" in response.json()  # Check for the presence of validation error details
 ```
 
-Let's complete the explanations for the remaining test cases as you requested:
-
 ---
 
 #### Test Case 4: Create Admin User with Missing Required Field
@@ -1336,7 +1328,7 @@ def test_create_admin_user_invalid_mobile_number(setup_db):
     admin_data = {
         "name": "Lucas Doe",
         "email": "lucas.doe@example.com",
-        "mobile_number": "invalid-number",  # Invalid format
+        "mobile_number": "7896056",  # Invalid format
         "location": "Test Location"
     }
 
@@ -1344,169 +1336,6 @@ def test_create_admin_user_invalid_mobile_number(setup_db):
 
     assert response.status_code == 422  # Unprocessable Entity for validation errors
     assert "detail" in response.json()  # Check for the presence of validation error details
-```
-
----
-
-#### Test Case 6: Admin User Role Assignment
-
-- **Test Case**: `test_create_admin_user_role_assignment`
-
-- **Test Description**: Verify that the role of the newly created admin user is set correctly to "user" (or whatever role is assigned by default).
-
-- **Preconditions**: The application server is running, and the `user` and `counters` collections are empty.
-
-- **Test Steps**:
-
-  1. Send a POST request to `/api/v1/admin/` with a JSON payload containing the admin user details.
-
-  2. Capture the response.
-
-  3. Check the role of the created user in the database.
-
-- **Expected Result**:
-
-  - The response status code should be `201 Created`.
-
-  - The created user's role should be `"user"` (or the default role defined in the system).
-
-- **Actual Result**:
-
-  - The response status code is `201 Created`.
-
-  - The created user has the role `"user"` in the database.
-
-- **Pass/Fail Criteria**: Pass.
-
-**Test Case Code**:
-
-```python
-def test_create_admin_user_role_assignment(setup_db):
-    admin_data = {
-        "name": "Sophia Doe",
-        "email": "sophia.doe@example.com",
-        "mobile_number": 1234567893,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "sophia.doe@example.com"})
-    assert user is not None
-    assert user["role"] == "user"  # Assuming 'user' is the default role
-```
-
----
-
-#### Test Case 7: Admin User Password Contains Special Characters
-
-- **Test Case**: `test_create_admin_user_special_characters_password`
-
-- **Test Description**: Verify that the password of a newly created admin user is hashed and contains special characters (part of password security validation).
-
-- **Preconditions**: The application server is running, and the `user` and `counters` collections are empty.
-
-- **Test Steps**:
-
-  1. Send a POST request to `/api/v1/admin/` with a JSON payload containing the admin user details.
-
-  2. Capture the response.
-
-  3. Verify that the password in the database is hashed and that it meets the required validation criteria (e.g., contains special characters, is not empty).
-
-- **Expected Result**:
-
-  - The response status code should be `201 Created`.
-
-  - The password should be hashed and meet security requirements.
-
-- **Actual Result**:
-
-  - The response status code is `201 Created`.
-
-  - The password in the database is hashed.
-
-- **Pass/Fail Criteria**: Pass.
-
-**Test Case Code**:
-
-```python
-def test_create_admin_user_special_characters_password(setup_db):
-    admin_data = {
-        "name": "Oliver Doe",
-        "email": "oliver.doe@example.com",
-        "mobile_number": 1234567894,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "oliver.doe@example.com"})
-    assert user is not None
-    assert len(user["password"]) > 0  # Ensure password is hashed and not empty
-```
-
----
-
-#### Test Case 8: Password Hashing
-
-- **Test Case**: `test_password_hashing`
-
-- **Test Description**: Verify that the password of a newly created admin user is hashed using bcrypt.
-
-- **Preconditions**: The application server is running, and the `user` and `counters` collections are empty.
-
-- **Test Steps**:
-
-  1. Send a POST request to `/api/v1/admin/` with a JSON payload containing the admin user details.
-
-  2. Capture the response.
-
-  3. Verify that the password in the database is hashed using bcrypt.
-
-- **Expected Result**:
-
-  - The response status code should be `201 Created`.
-
-  - The password should be hashed, and bcrypt hashing should be used (bcrypt hashes typically start with `$2b$`).
-
-- **Actual Result**:
-
-  - The response status code is `201 Created`.
-
-  - The password in the database is hashed using bcrypt (`$2b$`).
-
-- **Pass/Fail Criteria**: Pass.
-
-**Test Case Code**:
-
-```python
-def test_password_hashing(setup_db):
-    admin_data = {
-        "name": "Ava Doe",
-        "email": "ava.doe@example.com",
-        "mobile_number": 1234567895,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "ava.doe@example.com"})
-    assert user is not None
-    # Ensure the password is hashed
-    assert user["password"].startswith("$2b$")  # bcrypt hashes start with "$2b$"
 ```
 
 ---
@@ -1554,7 +1383,6 @@ def test_create_member(setup_db):
             "email": "johndoe@example.com",
             "mobile_number": 1234567890,
             "location": "Test Location",
-            "password": "Password123!"
         }
     )
     assert response.status_code == 201
@@ -1599,8 +1427,7 @@ def test_find_all_members(setup_db):
             "name": "Jane Doe",
             "email": "janedoe@example.com",
             "mobile_number": 9876543210,
-            "location": "Another Location",
-            "password": "Password123!"
+            "location": "Another Location"
         }
     )
     
@@ -1646,8 +1473,7 @@ def test_get_member(setup_db):
             "name": "Alice Smith",
             "email": "alicesmith@example.com",
             "mobile_number": 1122334455,
-            "location": "Some Location",
-            "password": "Password123!"
+            "location": "Some Location"
         }
     )
     member_id = create_response.json()["id"]
@@ -1694,8 +1520,7 @@ def test_update_member(setup_db):
             "name": "Bob Brown",
             "email": "bobbrown@example.com",
             "mobile_number": 2233445566,
-            "location": "New Location",
-            "password": "Password123!"
+            "location": "New Location"
         }
     )
     member_id = create_response.json()["id"]
@@ -1704,7 +1529,6 @@ def test_update_member(setup_db):
         f"/api/v1/member/{member_id}",
         json={
             "name": "Bob Updated",
-            "password": "NewPassword123!"
         }
     )
     assert update_response.status_code == 200
@@ -1748,8 +1572,7 @@ def test_delete_member(setup_db):
             "name": "Charlie Black",
             "email": "charlieblack@example.com",
             "mobile_number": 6677889900,
-            "location": "Delete Location",
-            "password": "Password123!"
+            "location": "Delete Location"
         }
     )
     member_id = create_response.json()["id"]
@@ -1883,50 +1706,8 @@ def test_create_user():
 
 ---
 
-#### Test Case 3: Invalid User Exception Handler
 
-- **Test Case**: `test_invalid_user_exception_handler`
-
-- **Test Description**: Verify that attempting to log in with a non-existent user results in a "Not Found" error.
-
-- **Preconditions**: The application server is running.
-
-- **Test Steps**:
-
-  1. Send a POST request to `/api/v1/login/` with an email and password for a user that does not exist in the database.
-
-  2. Capture the response.
-
-- **Expected Result**:
-
-  - The response status code should be `404 Not Found`.
-
-  - The error message should indicate that the user was not found.
-
-- **Actual Result**:
-
-  - The response status code is `404 Not Found`.
-
-  - The response body contains the error message `"User not found"`.
-
-- **Pass/Fail Criteria**: Pass.
-
-**Test Case Code:**
-
-```python
-def test_invalid_user_exception_handler():
-    user_data = {
-        "email": "nonexistent@gmail.com",
-        "password": "wRngpasswor2d*",
-    }
-    response = client.post("/api/v1/login/", json=user_data)
-    assert response.status_code == 404
-    assert response.json() == {"detail": "User not found"}
-```
-
----
-
-#### Test Case 4: Password Hashing
+#### Test Case 3: Password Hashing
 
 - **Test Case**: `test_password_hashing`
 

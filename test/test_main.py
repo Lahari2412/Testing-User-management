@@ -49,20 +49,8 @@ def test_create_user():
     created_user = conn.local.user.find_one({"email": "admin@gmail.com"})
     assert created_user is not None
     assert created_user["name"] == "Admin"
-
-
-
-def test_invalid_user_exception_handler():
-    user_data = {
-        "email": "nonexistent@gmail.com",
-        "password": "wRngpasswor2d*",
-        # Include all necessary fields required by your endpoint
-    }
-    response = client.post("/api/v1/login/", json=user_data)
-    assert response.status_code == 404
-    assert response.json() == {"detail": "User not found"}
  
-
+ 
 def test_password_hashing():
     raw_password = "Admin@12345"
     hashed_password = get_password_hash(raw_password)

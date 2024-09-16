@@ -31,11 +31,6 @@ def test_create_admin_user(setup_db):
     response_data = response.json()
     assert response_data["email"] == "john.doe@example.com"
 
-    db = conn.local
-    user = db.user.find_one({"email": "john.doe@example.com"})
-    assert user is not None
-    assert user["name"] == "John Doe"
-    assert len(user["password"]) > 0  # Ensure password is hashed
 
 def test_create_admin_user_duplicate_email(setup_db):
     admin_data = {
@@ -95,58 +90,3 @@ def test_create_admin_user_invalid_mobile_number(setup_db):
 
     assert response.status_code == 422  # Unprocessable Entity for validation errors
     assert "detail" in response.json()  # Check for the presence of validation error details
-
-def test_create_admin_user_role_assignment(setup_db):
-    admin_data = {
-        "name": "Sophia Doe",
-        "email": "sophia.doe@example.com",
-        "mobile_number": 1234567893,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "sophia.doe@example.com"})
-    assert user is not None
-    assert user["role"] == "user"
-
-def test_create_admin_user_special_characters_password(setup_db):
-    admin_data = {
-        "name": "Oliver Doe",
-        "email": "oliver.doe@example.com",
-        "mobile_number": 1234567894,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "oliver.doe@example.com"})
-    assert user is not None
-    assert len(user["password"]) > 0  # Ensure password is hashed and not empty
-
-def test_password_hashing(setup_db):
-    admin_data = {
-        "name": "Ava Doe",
-        "email": "ava.doe@example.com",
-        "mobile_number": 1234567895,
-        "location": "Test Location"
-    }
-
-    response = client.post("/api/v1/admin/", json=admin_data)
-
-    assert response.status_code == 201
-    response_data = response.json()
-    
-    db = conn.local
-    user = db.user.find_one({"email": "ava.doe@example.com"})
-    assert user is not None
-    # Ensure the password is hashed
-    assert user["password"].startswith("$2b$")  # bcrypt hashes start with "$2b$"

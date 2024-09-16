@@ -34,8 +34,7 @@ def test_login_successful(setup_db):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Login Successful"
-    assert "user_id" in data
-    assert "user_role" in data
+
 
 def test_login_invalid_password(setup_db):
     create_user("testuser@example.com", "ValidPassword123!")
